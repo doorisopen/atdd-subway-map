@@ -1,13 +1,12 @@
 package nextstep.subway.domain;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
 
 import static javax.persistence.FetchType.LAZY;
 import static javax.persistence.GenerationType.IDENTITY;
 
 @Entity
+@Table(name = "station")
 public class Station {
 
     @Id
@@ -18,8 +17,9 @@ public class Station {
     @Column(name = "name")
     private String name;
 
-    @OneToMany(mappedBy = "station", fetch = LAZY)
-    private final List<StationToSubwayLine> subwayLines = new ArrayList<>();
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "line_id")
+    private Line line;
 
     protected Station() {
     }
@@ -36,11 +36,11 @@ public class Station {
         return name;
     }
 
-    public void updateSubwayLine(StationToSubwayLine stationToSubwayLine) {
-        this.subwayLines.add(stationToSubwayLine);
+    public void setLine(Line line) {
+        this.line = line;
     }
 
-    public void removeSubwayLine(StationToSubwayLine stationToSubwayLine) {
-        this.subwayLines.remove(stationToSubwayLine);
+    public void removeLine() {
+        this.line = null;
     }
 }

@@ -3,16 +3,18 @@ package nextstep.subway.domain;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static javax.persistence.FetchType.LAZY;
 import static javax.persistence.GenerationType.IDENTITY;
 
 @Entity
-public class SubwayLine {
+@Table(name = "line")
+public class Line {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
-    @Column(name = "subway_line_id")
+    @Column(name = "line_id")
     private Long id;
 
     @Column(name = "name", nullable = false)
@@ -21,9 +23,8 @@ public class SubwayLine {
     @Column(name = "distance")
     private Integer distance;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "color_id")
-    private SubwayLineColor color;
+    @Column(name = "color")
+    private String color;
 
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "up_station_id")
@@ -33,13 +34,13 @@ public class SubwayLine {
     @JoinColumn(name = "down_station_id")
     private Station downStation;
 
-    @OneToMany(mappedBy = "subwayLine", fetch = LAZY)
-    private List<StationToSubwayLine> stations = new ArrayList<>();
+    @OneToMany(mappedBy = "line", fetch = LAZY)
+    private List<Section> sections = new ArrayList<>();
 
-    protected SubwayLine() {
+    protected Line() {
     }
 
-    public SubwayLine(String name, Integer distance, SubwayLineColor color, Station upStation, Station downStation) {
+    public Line(String name, Integer distance, String color, Station upStation, Station downStation) {
         this.name = name;
         this.distance = distance;
         this.color = color;
@@ -47,14 +48,14 @@ public class SubwayLine {
         this.downStation = downStation;
     }
 
-    public SubwayLine(SubwayLine subwayLine) {
+    public Line(Line subwayLine) {
         this.id = subwayLine.getId();
         this.name = subwayLine.getName();
         this.distance = subwayLine.getDistance();
         this.color = subwayLine.getColor();
         this.upStation = subwayLine.getUpStation();
         this.downStation = subwayLine.getDownStation();
-        this.stations = subwayLine.getStations();
+        this.sections = subwayLine.getSections();
     }
 
     public Long getId() {
@@ -65,7 +66,7 @@ public class SubwayLine {
         return name;
     }
 
-    public SubwayLineColor getColor() {
+    public String getColor() {
         return color;
     }
 
@@ -81,26 +82,37 @@ public class SubwayLine {
         return distance;
     }
 
-    public List<StationToSubwayLine> getStations() {
+    public List<Section> getSections() {
+        return sections;
+    }
+
+    public void update(String name, String color) {
+        this.name = name;
+        this.color = color;
+    }
+
+    public List<Station> getAllStations() {
+        final List<Station> stations = this.sections.stream()
+                .map(Section::getUpStation)
+                .collect(Collectors.toList());
+        stations.add(this.downStation);
+
         return stations;
     }
 
-    public SubwayLine update(String name, SubwayLineColor color) {
-        this.name = name;
-        this.color = color;
-
-        return new SubwayLine(this);
-    }
-
-    public void performDelete(StationToSubwayLine upStationToSubwayLine, StationToSubwayLine downStationToSubwayLine) {
-        this.upStation.removeSubwayLine(upStationToSubwayLine);
-        this.downStation.removeSubwayLine(downStationToSubwayLine);
-        this.stations.removeAll(List.of(upStationToSubwayLine, downStationToSubwayLine));
+    public void performDelete(Section section) {
+        this.upStation.removeLine();
+        this.downStation.removeLine();
+        this.sections.remove(section);
         this.upStation = null;
         this.downStation = null;
     }
 
-    public void updateStations(List<StationToSubwayLine> stationToSubwayLines) {
-        this.stations.addAll(stationToSubwayLines);
+    public void addSection(Section section) {
+        this.sections.add(section);
+    }
+
+    public void updateDownStation(Station downStation) {
+        this.downStation = downStation;
     }
 }
